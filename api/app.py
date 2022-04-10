@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime
 import os
 import datetime
 import click
-from flask_marshmallow import Marshmallow
+#from flask_marshmallow import Marshmallow
 
 
 app = Flask(__name__)
@@ -13,7 +13,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'Pa
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-ma = Marshmallow(app)
+#ma = Marshmallow(app)
 
 
 #Create database
@@ -71,9 +71,39 @@ def parameters():
 @app.route('/voucher', methods=['GET'])
 def voucher():
     voucher_list = Voucher.query.all()
-    result = voucher_schema.dump(voucher_list)
-    return jsonify(result)
+    result = []   
 
+    for voucher in voucher_list:   
+       voucher_data = {}   
+       voucher_data['name'] = voucher.service_name  
+       voucher_data['description'] = voucher.service_description
+       voucher_data['expiration_date'] = voucher.expiration_date
+       voucher_data['service_amount'] = voucher.service_amount 
+       voucher_data['status'] = voucher.status
+       voucher_data['barcode'] = voucher.barcode
+       result.append(voucher_data)
+       
+       
+    return jsonify({'vouchers': result})
+  
+
+@app.route('/add_payment', methods=['POST'])
+def add_payment():
+    barcode = request.form['barcode']
+    test = Payment.query.filter_by(barcode=barcode).first()
+    if test:
+        return jsonify(message='That barcode already exists.'), 409
+    else:
+        payment_method = request.form['payment_method']
+        creditcard_number = request.form['creditcard_number']
+        payment_amount = request.form['payment_amount']       
+        payment_date = datetime.datetime.strptime(request.form['payment_date'],'%Y-%m-%d') # 2202-04-10
+
+        payment = Payment(payment_method=payment_method, creditcard_number=creditcard_number, payment_amount=payment_amount, payment_date=payment_date, barcode=barcode)
+
+        db.session.add(payment)
+        db.session.commit()
+        return jsonify(message="Payment created successfully."), 201
 
 @app.route('/add_voucher', methods=['POST'])
 def add_voucher():
@@ -97,29 +127,6 @@ def add_voucher():
 
 
 
-@app.route('/retrieve_password/<string:email>', methods=['GET'])
-def retrieve_password(email: str):
-    user = User.query.filter_by(email=email).first()
-    if user:
-        msg = Message("your planetary API password is " + user.password,
-                      sender="admin@planetary-api.com",
-                      recipients=[email])
-        mail.send(msg)
-        return jsonify(message="Password sent to " + email)
-    else:
-        return jsonify(message="That email doesn't exist"), 401
-
-
-@app.route('/planet_details/<int:planet_id>', methods=["GET"])
-def planet_details(planet_id: int):
-    planet = Planet.query.filter_by(planet_id=planet_id).first()
-    if planet:
-        result = planet_schema.dump(planet)
-        return jsonify(result.data)
-    else:
-        return jsonify(message="That planet does not exist"), 404
-
-
 # database models
 class Voucher(db.Model):
     __tablename__ = 'voucher'
@@ -139,11 +146,11 @@ class Payment(db.Model):
     payment_method = Column(String)
     creditcard_number = Column(String)
     payment_amount = Column(Float)
-    codio_barra = Column(String, unique=True)
+    barcode = Column(String, unique=True)
     payment_date = Column(DateTime)
 
 
-class VoucherSchema(ma.Schema):
+""" class VoucherSchema(ma.Schema):
     class Meta:
         fields = ('id', 'service_name', 'service_description', 'expiration_date', 'amount','status','codio_barra','created_date' )
 
@@ -157,7 +164,7 @@ voucher_schema = VoucherSchema()
 vouchers_schema = VoucherSchema(many=True)
 
 payment_schema = PaymentSchema()
-payment_schema = PaymentSchema(many=True) 
+payment_schema = PaymentSchema(many=True)  """
 
 
 if __name__ == '__main__':

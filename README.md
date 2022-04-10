@@ -7,6 +7,16 @@ Enable service provider companies to upload bills ("create-tax"). To effect the 
 
 
 ## Installing
+
+After cloning, create a virtual environment and install the requirements
+
+```
+$ virtualenv flaskapi
+$ source flaskapi/bin/activate
+$ cd /api
+(flaskapi) $ pip3 install -r requirements.txt
+```
+
 * Create database
 ```
 Flask db_create

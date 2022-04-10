@@ -105,13 +105,29 @@ def add_voucher():
 
 @app.route('/voucher_list', methods=['GET'])
 def voucher_list():
+
     status = request.form['status']
-    list_vocher = db.session.query(db.func.sum(Voucher.service_amount).label('total_quantity')).filter_by(status=status).scalar() 
+
+    voucher_list = Voucher.query.filter_by(status=status)
+    result = []   
+
+    for voucher in voucher_list:   
+       voucher_data = {}   
+       voucher_data['service_name'] = voucher.service_name
+       voucher_data['expiration_date'] = voucher.expiration_date
+       voucher_data['service_amount'] = voucher.service_amount 
+       voucher_data['barcode'] = voucher.barcode
+       result.append(voucher_data)
     
-    if list_vocher:
-        
-        print(float(list_vocher))
-        return jsonify(Total=float(list_vocher)), 401
+    total_quantity = db.session.query(db.func.sum(Voucher.service_amount).label('total_quantity')).filter_by(status=status).scalar() 
+    
+    if total_quantity:
+        Total={}
+        Total['Total'] = float(total_quantity)
+        result.append(Total)
+
+        return jsonify({'Result' : result }), 201
+
     else:
         return jsonify(message="Result doesn't exist"), 401
 

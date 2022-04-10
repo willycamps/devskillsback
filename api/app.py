@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy.sql import functions
 import os
 import datetime
 import click
@@ -42,30 +43,6 @@ def db_seed():
     db.session.add(test_voucher)
     db.session.commit()
     print('Database seeded!')
-
-
-@app.route('/')
-def hello_world():
-    return 'Hello World!'
-
-@app.route('/super_simple')
-def super_simple():
-    return jsonify(message='Hello from the API.'), 200
-
-
-@app.route('/not_found')
-def not_found():
-    return jsonify(message='That resource was not found'), 404
-
-
-@app.route('/parameters')
-def parameters():
-    name = request.args.get('name')
-    age = int(request.args.get('age'))
-    if age < 18:
-        return jsonify(message="Sorry " + name + ", you are not old enough."), 401
-    else:
-        return jsonify(message="Welcome " + name + ", you are old enough!")
 
 
 @app.route('/voucher', methods=['GET'])
@@ -126,6 +103,19 @@ def add_voucher():
         return jsonify(message="Voucher created successfully."), 201
 
 
+@app.route('/voucher_list', methods=['GET'])
+def voucher_list():
+    status = request.form['status']
+    list_vocher = db.session.query(db.func.sum(Voucher.service_amount).label('total_quantity')).filter_by(status=status).scalar() 
+    
+    if list_vocher:
+        
+        print(float(list_vocher))
+        return jsonify(Total=float(list_vocher)), 401
+    else:
+        return jsonify(message="Result doesn't exist"), 401
+
+  
 
 # database models
 class Voucher(db.Model):

@@ -1,16 +1,18 @@
-# Service Provider Tax SPT
+# Tax Service Provider  TSP
 API REST 
 
-
 # Description
-The "Table" view I see a table with football clubs, sorted by points.
-In the "Admin" view I have the possibility to enter a result:
-Two clubs can be selected and one can be marked as winner. Each victory is worth three points. If no winner is marked, the match is considered a draw and both teams get one point. Goals are not counted.
+Tax payment company has two very important functions:
+Enable service provider companies to upload bills ("create-tax"). To effect the payment of a tax ("pay-tax").
 
 ## Getting Started
 
-### Prerequisites
+## Prerequisites
 
-### Installing
+## Installing
 
 ## Stack
+* [Flask](https://flask.palletsprojects.com/en/1.1.x/quickstart/) - Lightweight WSGI web application framework
+* [Python](https://www.python.org/) - Programming language
+* [Pip3](https://pip.pypa.io/en/stable/) - Package and dependency manager
+* [SQLite](https://www.sqlite.org) - Database

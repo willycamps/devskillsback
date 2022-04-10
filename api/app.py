@@ -4,8 +4,6 @@ from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.sql import functions
 import os
 import datetime
-import click
-#from flask_marshmallow import Marshmallow
 
 
 app = Flask(__name__)
@@ -14,7 +12,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'Pa
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-#ma = Marshmallow(app)
 
 
 #Create database
@@ -60,10 +57,8 @@ def voucher():
        voucher_data['barcode'] = voucher.barcode
        result.append(voucher_data)
        
-       
     return jsonify({'vouchers': result})
   
-
 @app.route('/add_payment', methods=['POST'])
 def add_payment():
     barcode = request.form['barcode']
@@ -102,7 +97,6 @@ def add_voucher():
         db.session.commit()
         return jsonify(message="Voucher created successfully."), 201
 
-
 @app.route('/voucher_list', methods=['GET'])
 def voucher_list():
 
@@ -131,7 +125,37 @@ def voucher_list():
     else:
         return jsonify(message="Result doesn't exist"), 401
 
-  
+@app.route('/payment_list', methods=['GET'])
+def payment_list():
+
+    startdate = request.form['start_date']
+    enddate = request.form['end_date']
+
+    start_date = datetime.datetime.strptime(startdate,'%Y-%m-%d') 
+    end_date = datetime.datetime.strptime(enddate,'%Y-%m-%d') 
+
+    payment_list = Payment.query.filter(Payment.payment_date.between(start_date, end_date))
+    result = []   
+
+    for payment in payment_list:   
+       payment_data = {}   
+       payment_data['payment_date'] = payment.payment_date
+       payment_data['payment_amount'] = payment.payment_amount
+       
+       result.append(payment_data)
+
+    
+    qry = db.session.query(db.func.sum(Payment.payment_amount).label('total_amount')).filter(Payment.payment_date.between(start_date, end_date)).scalar()
+        
+    if qry:
+        Total={}
+        Total['Total'] = float(qry)
+        result.append(Total)
+        return jsonify({'Result' : result }), 201
+
+    else:
+        return jsonify(message="Result doesn't exist"), 401
+
 
 # database models
 class Voucher(db.Model):
@@ -144,8 +168,6 @@ class Voucher(db.Model):
     status = Column(String)
     barcode = Column(String, unique=True)
     created_date = Column(DateTime, default=datetime.datetime.utcnow)
-
-
 class Payment(db.Model):
     __tablename__ = 'payment'
     payment_id = Column(Integer, primary_key=True)
@@ -154,23 +176,6 @@ class Payment(db.Model):
     payment_amount = Column(Float)
     barcode = Column(String, unique=True)
     payment_date = Column(DateTime)
-
-
-""" class VoucherSchema(ma.Schema):
-    class Meta:
-        fields = ('id', 'service_name', 'service_description', 'expiration_date', 'amount','status','codio_barra','created_date' )
-
-
-class PaymentSchema(ma.Schema):
-    class Meta:
-        fields = ('planet_id', 'payment_method', 'creditcard_number', 'payment_amount', 'codio_barra', 'payment_date') 
-
-
-voucher_schema = VoucherSchema()
-vouchers_schema = VoucherSchema(many=True)
-
-payment_schema = PaymentSchema()
-payment_schema = PaymentSchema(many=True)  """
 
 
 if __name__ == '__main__':
